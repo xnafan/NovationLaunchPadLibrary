@@ -7,6 +7,7 @@ namespace LaunchPad;
 public class NovationLaunchPad : IDisposable
 {
     public event ButtonEventHandler? ButtonEvent;
+    private BoardState _boardState = new BoardState();
 
     private readonly static Dictionary<int, ButtonType> RightColumnButtonIndexes = new Dictionary<int, ButtonType>() { {0, ButtonType.Vol },
     {1, ButtonType.Pan },
@@ -37,6 +38,7 @@ public class NovationLaunchPad : IDisposable
         _inputDevice.EventReceived += OnEventReceived;
         _inputDevice.StartEventsListening();
         _outputDevice = OutputDevice.GetByName(deviceName);
+        AllOff();
     }
 
     public void ButtonOn(int col, int row, ButtonColor color)
@@ -44,6 +46,8 @@ public class NovationLaunchPad : IDisposable
         int buttonValue = 16 * row + col;
         if (row < 0) { buttonValue = 104 + col; };
         _outputDevice.SendEvent(new NoteOnEvent((SevenBitNumber)buttonValue, (SevenBitNumber)(byte)color));
+        
+        _boardState.ChangeButtonState(col, row, color);
     }
 
     public void ButtonOff(int col, int row)
@@ -51,6 +55,7 @@ public class NovationLaunchPad : IDisposable
         int buttonValue = 16 * row + col;
         if (row < 0) { buttonValue = 104 + col; };
         _outputDevice.SendEvent(new NoteOffEvent((SevenBitNumber)buttonValue, (SevenBitNumber)0));
+        _boardState.ChangeButtonState(col, row, ButtonColor.Off);
     }
 
     public void AllOff()
@@ -108,5 +113,15 @@ public class NovationLaunchPad : IDisposable
     {
         (_inputDevice as IDisposable)?.Dispose();
         (_outputDevice as IDisposable)?.Dispose();
+    }
+
+    public override string ToString()
+    {
+        return _boardState.ToString();
+    }
+
+    public ButtonColor GetButtonColor(int x, int y)
+    {
+        return _boardState.GetButtonColor(x, y);
     }
 }

@@ -20,8 +20,33 @@ namespace Runner
 
         private static void Launchpad_ButtonEvent(object? sender, ButtonEventArgs e)
         {
-            Console.WriteLine(e);
-            launchpad.ButtonOn(e.Position.X, e.Position.Y, ButtonColor.Red);
+            // Console.WriteLine(e);
+            if (e.EventType == ButtonEventType.Pressed)
+            {
+                Console.WriteLine(launchpad);
+                ButtonColor newColor = ButtonColor.Off;
+                ButtonColor currentColor = launchpad.GetButtonColor(e.Position.X, e.Position.Y);
+                switch (currentColor)
+                {
+                    case ButtonColor.Off:
+                        newColor = ButtonColor.Green;
+                        break;
+                    case ButtonColor.Green:
+                        newColor = ButtonColor.Amber;
+                        break;
+                    case ButtonColor.Amber:
+                        newColor = ButtonColor.Red;
+                        break;
+                    case ButtonColor.Red:
+                        newColor = ButtonColor.Off;
+                        break;
+                    default:
+                        break;
+                }
+
+                launchpad.ButtonOn(e.Position.X, e.Position.Y, newColor); 
+            }
         }
     }
+    
 }
