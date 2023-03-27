@@ -11,4 +11,8 @@
     <PackageReference Include="Melanchall.DryWetMidi" Version="6.1.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LaunchPad\LaunchPad.csproj" />
+  </ItemGroup>
+
 </Project>
