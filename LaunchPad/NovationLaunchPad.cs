@@ -1,15 +1,10 @@
 ﻿using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LaunchPad;
-public class NovationLaunchPad
+public class NovationLaunchPad : IDisposable
 {
     public event ButtonEventHandler? ButtonEvent;
 
@@ -44,17 +39,21 @@ public class NovationLaunchPad
         _outputDevice = OutputDevice.GetByName(deviceName);
     }
 
-    private static void ButtonOn(int col, int row, ButtonColor color)
+    public void ButtonOn(int col, int row, ButtonColor color)
     {
-        _outputDevice.SendEvent(new NoteOnEvent((SevenBitNumber)(16 * row + col), (SevenBitNumber)(byte)color));
+        int buttonValue = 16 * row + col;
+        if (row < 0) { buttonValue = 104 + col; };
+        _outputDevice.SendEvent(new NoteOnEvent((SevenBitNumber)buttonValue, (SevenBitNumber)(byte)color));
     }
 
-    private static void ButtonOff(int col, int row)
+    public void ButtonOff(int col, int row)
     {
-        _outputDevice.SendEvent(new NoteOffEvent((SevenBitNumber)(16 * row + col), (SevenBitNumber)0));
+        int buttonValue = 16 * row + col;
+        if (row < 0) { buttonValue = 104 + col; };
+        _outputDevice.SendEvent(new NoteOffEvent((SevenBitNumber)buttonValue, (SevenBitNumber)0));
     }
 
-    private static void AllOff()
+    public void AllOff()
     {
         for (int x = 0; x < 9; x++)
         {
@@ -64,7 +63,7 @@ public class NovationLaunchPad
             }
         }
     }
-    private static void AllOn(ButtonColor color)
+    public void AllOn(ButtonColor color)
     {
         for (int x = 0; x < 9; x++)
         {
@@ -76,11 +75,12 @@ public class NovationLaunchPad
     }
     private void OnEventReceived(object sender, MidiEventReceivedEventArgs e)
     {
+
+        Console.WriteLine(  e.Event);
         var midiDevice = (MidiDevice)sender;
 
-        if (e.Event is NoteOnEvent noteOnEvent)
+        if (e.Event is NoteOnEvent buttonEvent)
         {
-            var buttonEvent = (NoteOnEvent)noteOnEvent;
             ButtonEventType buttonEventType = buttonEvent.Velocity == 0 ? ButtonEventType.Released : ButtonEventType.Pressed;
             int row = buttonEvent.NoteNumber / 16;
             int column = buttonEvent.NoteNumber % 16;
@@ -92,12 +92,11 @@ public class NovationLaunchPad
             }
             ButtonEvent?.Invoke(this, buttonArgs);
         }
-        else if(e.Event is ControlChangeEvent controlChangeEvent) 
+        else if(e.Event is ControlChangeEvent controlButtonEvent) 
         {
-            var buttonEvent = (ControlChangeEvent)controlChangeEvent;
-            ButtonEventType buttonEventType = buttonEvent.ControlValue == 0 ? ButtonEventType.Released : ButtonEventType.Pressed;
+            ButtonEventType buttonEventType = controlButtonEvent.ControlValue == 0 ? ButtonEventType.Released : ButtonEventType.Pressed;
             int row = -1;
-            int column = buttonEvent.ControlNumber -104;
+            int column = controlButtonEvent.ControlNumber -104;
             ButtonEventArgs buttonArgs = new (ButtonType.GridButton, new Point(column, row), buttonEventType);
             buttonArgs.Button = TopRowButtonIndexes[buttonArgs.Position.X];
             
@@ -105,6 +104,9 @@ public class NovationLaunchPad
         }
     }
 
-    //(_inputDevice as IDisposable)?.Dispose();
-    //(_outputDevice as IDisposable)?.Dispose();
+    public void Dispose()
+    {
+        (_inputDevice as IDisposable)?.Dispose();
+        (_outputDevice as IDisposable)?.Dispose();
+    }
 }
