@@ -12,7 +12,7 @@ namespace Runner
             using (launchpad = new NovationLaunchPad())
             {
                 launchpad.ButtonEvent += Launchpad_ButtonEvent;
-
+                launchpad.AllOff();
                 Console.WriteLine("Input device is listening for events. Press any key to exit...");
                 Console.ReadLine();
             }

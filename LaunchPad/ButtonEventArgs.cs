@@ -16,4 +16,14 @@ public partial class ButtonEventArgs : EventArgs
     {
         return $"ButtonEventArgs. Button: {Button}, Position: {Position}, EventType: {EventType}";
     }
+
+    public bool IsTopRowButton()
+    {
+        return Position.Y == -1;
+    }
+
+    public bool IsRightColumnButton()
+    {
+        return Position.X == 8;
+    }
 }
