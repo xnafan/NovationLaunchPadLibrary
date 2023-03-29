@@ -1,6 +1,6 @@
 ﻿using NESControllerLibrary;
 
-namespace Snake
+namespace Snake.Controllers
 {
     internal class NesSnakeController : SnakeControllerBase
     {

@@ -42,9 +42,9 @@ public class NovationLaunchPad : IDisposable
         _outputDevice = OutputDevice.GetByName(deviceName);
     }
 
-    public void ButtonOn(int col, int row, ButtonColor color)
+    public void ButtonOn(int col, int row, ButtonColor color, bool force = false)
     {
-        if (_boardState.GetButtonColor(col, row).Equals(color)) { return; }
+        if (!force && _boardState.GetButtonColor(col, row).Equals(color)) { return; }
         int buttonValue = 0;
         if (row == 0)
         {
@@ -59,9 +59,9 @@ public class NovationLaunchPad : IDisposable
         _boardState.ChangeButtonState(col, row, color);
     }
 
-    public void ButtonOff(int col, int row)
+    public void ButtonOff(int col, int row, bool force = false)
     {
-        if (_boardState.GetButtonColor(col, row).Equals(ButtonColor.Off)) { return; }
+        if (!force && _boardState.GetButtonColor(col, row).Equals(ButtonColor.Off)) { return; }
         int buttonValue = 0;
         if (row == 0)
         {
@@ -79,23 +79,23 @@ public class NovationLaunchPad : IDisposable
         _boardState.ChangeButtonState(col, row, ButtonColor.Off);
     }
 
-    public void AllOff()
+    public void AllOff(bool force = false)
     {
         for (int x = 0; x < 9; x++)
         {
             for (int y = 0; y < 9; y++)
             {
-                ButtonOff(x, y);
+                ButtonOff(x, y, force);
             }
         }
     }
-    public void AllOn(ButtonColor color)
+    public void AllOn(ButtonColor color, bool force = false)
     {
         for (int x = 0; x < 9; x++)
         {
             for (int y = 0; y < 9; y++)
             {
-                ButtonOn(x, y, color);
+                ButtonOn(x, y, color, force);
             }
         }
     }

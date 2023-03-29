@@ -13,7 +13,7 @@ public class Snake
         BodyParts = new List<BodyPart> { startingPoint };
     }
 
-    public void Move(Point applePosition)
+    public bool Move(Point applePosition)
     {
         Point tailPosition = BodyParts.Last();
         for (int bCounter = BodyParts.Count - 1; bCounter >= 1; bCounter--)
@@ -26,7 +26,9 @@ public class Snake
         if (head == applePosition)
         {
             BodyParts.Add(tailPosition);
+            return true;
         }
+        return false;
     }
 
     private bool MoveResultInCollisionWithBody()

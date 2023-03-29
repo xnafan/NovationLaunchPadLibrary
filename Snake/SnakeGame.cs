@@ -1,4 +1,5 @@
 ﻿using LaunchPad;
+using Snake.Controllers;
 using System.Drawing;
 namespace Snake;
 public class SnakeGame
@@ -15,6 +16,8 @@ public class SnakeGame
     Point _apple;
     int _deadTicksLeft;
     GameState _gameState = GameState.Playing;
+    private int _defaultIntervalInMs = 350;
+    private int _currentTimerInterval;
     #endregion
 
     public SnakeGame(ISnakeController controller, NovationLaunchPad launchPad)
@@ -22,8 +25,8 @@ public class SnakeGame
         _controller = controller;
         _controller.DirectionEvent += Controller_DirectionEvent;
         _launchPad = launchPad;
+        _timer = new Timer(new TimerCallback(Timer_Tick), _snake, 250, _defaultIntervalInMs);
         ReStart();
-        _timer = new Timer(new TimerCallback(Timer_Tick), _snake, 0, 250);
     }
 
     private void Timer_Tick(object? state)
@@ -74,10 +77,15 @@ public class SnakeGame
     {
         var nextHeadPosition = _snake.GetNextPosition();
         if (!IsOnBoard(nextHeadPosition)) { return false; }
-        if (_snake.Contains(nextHeadPosition)) { _launchPad.ButtonOn(nextHeadPosition.X, nextHeadPosition.Y, ButtonColor.Red); return false; }
+        if (_snake.Contains(nextHeadPosition)) { _launchPad.ButtonOn(nextHeadPosition.X, nextHeadPosition.Y, ButtonColor.Red); return false; 
+        }
         var snakeEnd = _snake.BodyParts.Last();
         _launchPad.ButtonOff(snakeEnd.X, snakeEnd.Y);
-        _snake.Move(_apple);
+        if(_snake.Move(_apple))
+        {
+            _currentTimerInterval = (int)(_currentTimerInterval * .97f);
+            _timer.Change(_currentTimerInterval, _currentTimerInterval);
+        }
         return true;
     }
 
@@ -116,8 +124,10 @@ public class SnakeGame
 
     public void ReStart()
     {
+        _timer.Change(500,_defaultIntervalInMs);
+        _currentTimerInterval = _defaultIntervalInMs;
         _gameState = GameState.Playing;
-        _launchPad.AllOff();
+        _launchPad.AllOff(true);
         _snake = new Snake(new Point(4, 8));
         _snake.Direction = Direction.Up;
         do
