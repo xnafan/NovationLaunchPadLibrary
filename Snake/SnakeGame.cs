@@ -3,6 +3,8 @@ using System.Drawing;
 namespace Snake;
 public class SnakeGame
 {
+    public enum GameState { Playing, Dead };
+
     #region Attributes
     private ISnakeController _controller;
     private Snake _snake;
@@ -10,25 +12,51 @@ public class SnakeGame
     private readonly static Random random = new Random();
     private Point TopLeftSquare = new(0, 1), BottomRight = new(7, 8);
     Timer _timer;
-    Point _apple; 
+    Point _apple;
+    int _deadTicksLeft;
+    GameState _gameState = GameState.Playing;
     #endregion
 
     public SnakeGame(ISnakeController controller, NovationLaunchPad launchPad)
     {
         _controller = controller;
-        _controller.DirectionEvent += Controller_DirectionEvent;            
+        _controller.DirectionEvent += Controller_DirectionEvent;
         _launchPad = launchPad;
         ReStart();
-        _timer = new Timer(new TimerCallback(Timer_Tick), _snake, 0, 600);
+        _timer = new Timer(new TimerCallback(Timer_Tick), _snake, 0, 250);
     }
 
     private void Timer_Tick(object? state)
     {
-        MoveSnake();
-        
-        if (_snake.Head.X < TopLeftSquare.X || _snake.Head.X > BottomRight.X || _snake.Head.Y < TopLeftSquare.Y || _snake.Head.Y > BottomRight.Y) { ReStart(); }
-        MoveAppleIfEaten();
-        Draw();
+        lock (this)
+        {
+            if (_gameState == GameState.Playing)
+            {
+
+                if (MoveSnake())
+                {
+                    MoveAppleIfEaten();
+                    Draw();
+                }
+                else
+                {
+                    GameOver();
+                }
+            }
+            else
+            {
+                _deadTicksLeft--;
+                if (_deadTicksLeft <= 0)
+                {
+                    ReStart();
+                }
+            }
+        }
+    }
+
+    private bool IsOnBoard(Point point)
+    {
+        return point.X >= TopLeftSquare.X && point.X <= BottomRight.X && point.Y >= TopLeftSquare.Y && point.Y <= BottomRight.Y;
     }
 
     private void MoveAppleIfEaten()
@@ -42,17 +70,27 @@ public class SnakeGame
         }
     }
 
-    private void MoveSnake()
+    private bool MoveSnake()
     {
+        var nextHeadPosition = _snake.GetNextPosition();
+        if (!IsOnBoard(nextHeadPosition)) { return false; }
+        if (_snake.Contains(nextHeadPosition)) { _launchPad.ButtonOn(nextHeadPosition.X, nextHeadPosition.Y, ButtonColor.Red); return false; }
         var snakeEnd = _snake.BodyParts.Last();
         _launchPad.ButtonOff(snakeEnd.X, snakeEnd.Y);
-        if (_snake.MoveAndReturnCollisionWithOwnBody(_apple)) { ReStart(); }
+        _snake.Move(_apple);
+        return true;
     }
 
-    private Point GetRandomSnakePoint()
+    private void GameOver()
     {
-        return new Point(random.Next(4,6), random.Next(4,6));
+        _gameState = GameState.Dead;
+        _deadTicksLeft = 3;
+        foreach (var bodyPart in _snake.BodyParts)
+        {
+            _launchPad.ButtonOn(bodyPart.X, bodyPart.Y, ButtonColor.Amber);
+        }
     }
+
     private Point GetRandomApplePoint()
     {
         return new Point(random.Next(TopLeftSquare.X, BottomRight.X), random.Next(TopLeftSquare.Y, BottomRight.Y));
@@ -60,8 +98,10 @@ public class SnakeGame
 
     private void Controller_DirectionEvent(object? sender, DirectionEventArgs e)
     {
-        _snake.Direction = e.Direction;
-        Draw();
+        if (e.Direction != _snake.Heading.GetOppositeDirection())
+        {
+            _snake.Direction = e.Direction;
+        }
     }
 
     private void Draw()
@@ -70,21 +110,19 @@ public class SnakeGame
         {
             var bodyPart = _snake.BodyParts[i];
             _launchPad.ButtonOn(bodyPart.X, bodyPart.Y, ButtonColor.Green);
-            Console.Write(bodyPart);
         }
-        Console.WriteLine();
         _launchPad.ButtonOn(_apple.X, _apple.Y, ButtonColor.Red);
     }
 
     public void ReStart()
     {
+        _gameState = GameState.Playing;
         _launchPad.AllOff();
-        var randomPoint = GetRandomSnakePoint();
-        _snake = new Snake(randomPoint);
+        _snake = new Snake(new Point(4, 8));
         _snake.Direction = Direction.Up;
         do
         {
-            _apple = GetRandomSnakePoint();
+            _apple = GetRandomApplePoint();
         } while (_apple == _snake.BodyParts.First());
         Draw();
     }

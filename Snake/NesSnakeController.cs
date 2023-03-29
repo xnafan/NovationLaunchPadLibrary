@@ -2,10 +2,8 @@
 
 namespace Snake
 {
-    internal class NesSnakeController : ISnakeController
+    internal class NesSnakeController : SnakeControllerBase
     {
-        public event DirectionEventHandler? DirectionEvent;
-
         private NESController _controller;
 
         public NesSnakeController()
@@ -21,16 +19,16 @@ namespace Snake
                 switch (e.Button)
                 {
                     case NESControllerButton.Up:
-                        DirectionEvent?.Invoke(this, new DirectionEventArgs(Direction.Up));
+                        OnButtonChange(Direction.Up);
                         break;
                     case NESControllerButton.Down:
-                        DirectionEvent?.Invoke(this, new DirectionEventArgs(Direction.Down));
+                        OnButtonChange(Direction.Down);
                         break;
                     case NESControllerButton.Left:
-                        DirectionEvent?.Invoke(this, new DirectionEventArgs(Direction.Left));
+                        OnButtonChange(Direction.Left);
                         break;
                     case NESControllerButton.Right:
-                        DirectionEvent?.Invoke(this, new DirectionEventArgs(Direction.Right));
+                        OnButtonChange(Direction.Right);
                         break;
                     default:
                         break;

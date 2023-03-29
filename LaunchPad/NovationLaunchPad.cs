@@ -36,7 +36,7 @@ public class NovationLaunchPad : IDisposable
     {
         //fails intermittently, but the device exists and can be retrieved using InputDevice.GetAll()[0];
         _inputDevice = InputDevice.GetByName(deviceName);
-        
+
         _inputDevice.EventReceived += OnEventReceived;
         _inputDevice.StartEventsListening();
         _outputDevice = OutputDevice.GetByName(deviceName);
@@ -44,6 +44,7 @@ public class NovationLaunchPad : IDisposable
 
     public void ButtonOn(int col, int row, ButtonColor color)
     {
+        if (_boardState.GetButtonColor(col, row).Equals(color)) { return; }
         int buttonValue = 0;
         if (row == 0)
         {
@@ -60,17 +61,21 @@ public class NovationLaunchPad : IDisposable
 
     public void ButtonOff(int col, int row)
     {
+        if (_boardState.GetButtonColor(col, row).Equals(ButtonColor.Off)) { return; }
         int buttonValue = 0;
-        if (row == 0) { buttonValue = 104 + col;
+        if (row == 0)
+        {
+            buttonValue = 104 + col;
+
             _outputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)buttonValue, (SevenBitNumber)0));
         }
         else
         {
-            buttonValue = 16 * (row -1)+ col;
+            buttonValue = 16 * (row - 1) + col;
             _outputDevice.SendEvent(new NoteOffEvent((SevenBitNumber)buttonValue, (SevenBitNumber)0));
 
         }
-        
+
         _boardState.ChangeButtonState(col, row, ButtonColor.Off);
     }
 
@@ -97,30 +102,30 @@ public class NovationLaunchPad : IDisposable
     private void OnEventReceived(object sender, MidiEventReceivedEventArgs e)
     {
 
-       // Console.WriteLine(  e.Event);
+        // Console.WriteLine(  e.Event);
         var midiDevice = (MidiDevice)sender;
 
         if (e.Event is NoteOnEvent buttonEvent)
         {
             ButtonEventType buttonEventType = buttonEvent.Velocity == 0 ? ButtonEventType.Released : ButtonEventType.Pressed;
-            int row = buttonEvent.NoteNumber / 16 +1;
+            int row = buttonEvent.NoteNumber / 16 + 1;
             int column = buttonEvent.NoteNumber % 16;
 
-            ButtonEventArgs buttonArgs = new (ButtonType.GridButton, new Point(column, row), buttonEventType);
-            if(buttonArgs.Position.X == 8)
+            ButtonEventArgs buttonArgs = new(ButtonType.GridButton, new Point(column, row), buttonEventType);
+            if (buttonArgs.Position.X == 8)
             {
-                buttonArgs.Button = RightColumnButtonIndexes[buttonArgs.Position.Y-1];
+                buttonArgs.Button = RightColumnButtonIndexes[buttonArgs.Position.Y - 1];
             }
             ButtonEvent?.Invoke(this, buttonArgs);
         }
-        else if(e.Event is ControlChangeEvent controlButtonEvent) 
+        else if (e.Event is ControlChangeEvent controlButtonEvent)
         {
             ButtonEventType buttonEventType = controlButtonEvent.ControlValue == 0 ? ButtonEventType.Released : ButtonEventType.Pressed;
             int row = 0;
-            int column = controlButtonEvent.ControlNumber -104;
-            ButtonEventArgs buttonArgs = new (ButtonType.GridButton, new Point(column, row), buttonEventType);
+            int column = controlButtonEvent.ControlNumber - 104;
+            ButtonEventArgs buttonArgs = new(ButtonType.GridButton, new Point(column, row), buttonEventType);
             buttonArgs.Button = TopRowButtonIndexes[buttonArgs.Position.X];
-            
+
             ButtonEvent?.Invoke(this, buttonArgs);
         }
     }
