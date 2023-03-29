@@ -34,7 +34,9 @@ public class NovationLaunchPad : IDisposable
 
     public NovationLaunchPad(string deviceName = "Launchpad")
     {
+        //fails intermittently, but the device exists and can be retrieved using InputDevice.GetAll()[0];
         _inputDevice = InputDevice.GetByName(deviceName);
+        
         _inputDevice.EventReceived += OnEventReceived;
         _inputDevice.StartEventsListening();
         _outputDevice = OutputDevice.GetByName(deviceName);
@@ -52,7 +54,6 @@ public class NovationLaunchPad : IDisposable
         {
             buttonValue = 16 * (row - 1) + col;
             _outputDevice.SendEvent(new NoteOnEvent((SevenBitNumber)buttonValue, (SevenBitNumber)(byte)color));
-
         }
         _boardState.ChangeButtonState(col, row, color);
     }

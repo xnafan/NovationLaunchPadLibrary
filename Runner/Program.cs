@@ -23,7 +23,6 @@ namespace Runner
             // Console.WriteLine(e);
             if (e.EventType == ButtonEventType.Pressed)
             {
-                Console.WriteLine(launchpad);
                 ButtonColor newColor = ButtonColor.Off;
                 ButtonColor currentColor = launchpad.GetButtonColor(e.Position.X, e.Position.Y);
                 switch (currentColor)
@@ -45,6 +44,7 @@ namespace Runner
                 }
 
                 launchpad.ButtonOn(e.Position.X, e.Position.Y, newColor); 
+                Console.WriteLine(launchpad);
             }
         }
     }
